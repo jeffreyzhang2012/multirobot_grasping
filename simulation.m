@@ -1,5 +1,14 @@
 close all; clear all; clc;
-m = model();
+% Object property
+M = 10;
+J = 5;
+mu0 = 0.2;
+mu1 = 0.01;
+g = 9.8;
+initial_vel = [0 0 0];
+initial_pos = [0 0 0];
+% TODO: add a max veclocity for object
+m = model(M,J, mu0, mu1, g, initial_vel, initial_pos);
 global running;
 fig = figure;
 play = tic();
@@ -9,7 +18,8 @@ running = 1;
 dt = 0.05;
 while running && toc(play) < 10
     t_loopstart = tic();
-    m = m.update(toc(play));
+%     m = m.update(toc(play));
+    m = m.dynamic_update(dt,toc(play));
     m.draw();
     axis([-15,50,-15,50]);
     el_time = toc(t_loopstart);
