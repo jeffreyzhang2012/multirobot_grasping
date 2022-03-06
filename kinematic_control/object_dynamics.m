@@ -1,12 +1,12 @@
-function [dvdt, F_robots, F_env] = object_dynamics(v, vd)
+function [dvdt, F_robots, F_env] = object_dynamics(v, w, vd, wd)
 % This function simulates the object velocity update step.
-    global mu, global M, global N, global g, global EPS
+    global mu_s, global M, global N, global g, global EPS
     F_robot = zeros(2, 1);      % sum of robot forces
     F_robots = zeros(N + 1, 2); % buffer that stores all forces
     %% Environmental forces
-    F_env = -mu * M * g .* v / (norm(v) + EPS);
+    F_env = -mu_s * M * g .* v / (norm(v) + EPS);
     %% Leader force
-    F_leader = controller_leader(v, vd);
+    F_leader = controller_leader(v, w, vd, wd);
     F_robot = F_robot + F_leader;
     % log force into buffer
     F_robots(1, :) = F_leader;
@@ -26,11 +26,11 @@ function [dvdt, F_robots, F_env] = object_dynamics(v, vd)
         F_robots(i + 1, :) = F_follower;
     end
     %% Object dynamics
-    if norm(F_robot) <= mu * M * g
+    if norm(F_robot) <= mu_s * M * g
         F = zeros(2, 1);
     elseif v == 0
         F = F_robot ./ norm(F_robot)...
-                .* (norm(F_robot) - mu * M * g);
+                .* (norm(F_robot) - mu_s * M * g);
     else
         F = F_env + F_robot;
     end

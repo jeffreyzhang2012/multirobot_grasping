@@ -22,7 +22,7 @@ force_robots_buf = zeros(N + 1, 2, horizon);
 % environmental force
 force_env_buf = zeros(2, horizon);
 for t = 1 : horizon - 1
-    [dvdt, F_robots, F_env] = object_dynamics(vel_buf(:, t), vd);
+    [dvdt, F_robots, F_env] = object_dynamics(vel_buf(:, t), 0, vd, 0);
     force_robots_buf(:, :, t+1) = F_robots;
     force_env_buf(:, t+1) = F_env;
     vel_buf(:, t+1) = vel_buf(:, t) + dt .* dvdt;
