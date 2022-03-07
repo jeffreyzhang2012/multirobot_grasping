@@ -10,7 +10,7 @@ clc
 
 InitConf = [1 4 0;2 2 3;3 2 -3;4 -2 2;5 -2 -2];
 
-% Go to Line ?? and adjust the number of empty cells accordingly to the 
+% Go to Line 81 and adjust the number of empty cells accordingly to the 
 % number of robots.
 
 % Initialize ground truth of the heading of each robot relative to the 
@@ -24,7 +24,7 @@ d = 5;
 
 % Maximum noise of the infrared sensors
 
-MaxNoise = 0.1;
+MaxNoise = 0.5;
 
 % Finding Initial Relative Positions and Orientations among agents.
 
@@ -43,9 +43,9 @@ RelPos = RelativePosition(InitConf,Graph);
 
 % while true
     
-    GuidePos = [5,0];
-    Vdes = 1;
-    omega = 0.01;
+    GuidePos = [5,0];   % Varies with time
+    Vdes = 1;           % Varies with time
+    omega = 0.01;       % Varies with time
     
     %[GuidePos,Vdes,omega] =%OBJECTFUNCTION%
     C = CentroidEstimation(RelPos,Tree,MaxNoise);
@@ -137,7 +137,7 @@ function [RelPos,Heading,V] = Update(RelPos,Heading,V,MaxDeltaH)
         
         if abs(theta) > MaxDeltaH
             theta = MaxDeltaH*sign(theta);
-            V(i,:) = [0 0];
+            V(i,:) = [0 0 0 0];
         end
         
         Heading(i) = Heading(i) + theta;
@@ -158,6 +158,9 @@ function [RelPos,Heading,V] = Update(RelPos,Heading,V,MaxDeltaH)
         end
         
     end
+    
+    % Noisy Velocity Command
+    V = V(:,3:4);
 
 end
 
@@ -175,12 +178,13 @@ function V = FindVelocity(DirTrans,omega,Vdes,Centroid)
 % V: Desired direction of transport for each robot in its local frame.
 
 n = size(DirTrans,1);
-V = zeros(n,2);
+V = zeros(n,4);
 Omega = [0 0 omega];
 
 for i = 1:n
     
-    du = [-Centroid(i,:) 1];
+    % Clean Velocity Command
+    du = [-Centroid(i,1:2) 1];
     Vw = cross(Omega,du);
     u = Vw/norm(Vw);
     u(isnan(u)) = 0;
@@ -191,8 +195,21 @@ for i = 1:n
     else
         Vy = norm(Vw)*sin(beta);
     end
+    V(i,1:2) = [Vx Vy];
     
-    V(i,:) = [Vx Vy];    
+    % Noisy Velocity Command
+    du = [-Centroid(i,3:4) 1];
+    Vw = cross(Omega,du);
+    u = Vw/norm(Vw);
+    u(isnan(u)) = 0;
+    beta = acos(dot(u(1:2),DirTrans(i,3:4)));
+    Vx = norm(Vw)*cos(beta) + Vdes;
+    if Vw(2)<0
+        Vy = -norm(Vw)*sin(beta);
+    else
+        Vy = norm(Vw)*sin(beta);
+    end
+    V(i,3:4) = [Vx Vy];
 
 end
 
@@ -218,16 +235,23 @@ function DirTrans = FindDirTrans(InitConf,Heading,Centroid,GuidePos,MaxNoise)
 % DirTrans: Direction of transpor for each robot in robot frame.
 
 n = size(InitConf,1);
-DirTrans = zeros(n,3);
+DirTrans = zeros(n,4);
 
     for i = 1:n
-
-        x = GuidePos(1) - InitConf(i,2) + MaxNoise*(rand-0.5);
-        y = GuidePos(2) - InitConf(i,3) + MaxNoise*(rand-0.5);
+        
+        % Clean Direction of Transport
+        x = GuidePos(1) - InitConf(i,2);
+        y = GuidePos(2) - InitConf(i,3);
         G = rotz(Heading(i))*[x; y; 1];
         dir = [G(1)-Centroid(i,1) G(2)-Centroid(i,2)];
         DirTrans(i,1:2) = dir/norm(dir);
-        DirTrans(i,3) = atan2d(DirTrans(i,2),DirTrans(i,1));
+        
+        %Noisy Direction of Transport        
+        x = x + MaxNoise*(rand-0.5);
+        y = y + MaxNoise*(rand-0.5);
+        G = rotz(Heading(i))*[x; y; 1];
+        dir = [G(1)-Centroid(i,3) G(2)-Centroid(i,4)];
+        DirTrans(i,3:4) = dir/norm(dir);
 
     end
 
@@ -249,11 +273,11 @@ function Centroid = CentroidEstimation(RelPos,Tree,MaxNoise)
 
     
 n = length(RelPos);
-Centroid = zeros(n,2);
+Centroid = zeros(n,4);
 
 for i = 1:n
     
-    S0 = [0;0;1];
+    S0 = [0 0;0 0;1 1];
     Siu = S0;
     Nc = Tree((Tree(:,1) == i),:);
     
@@ -264,7 +288,11 @@ for i = 1:n
         Siu = Siu + S;
     end
     
-    Centroid(i,:) = [Siu(1)/Siu(3) Siu(2)/Siu(3)] ;
+    % Clean Centroid
+    Centroid(i,1:2) = [Siu(1,1)/Siu(3,1) Siu(2,1)/Siu(3,1)];
+    
+    % Noisy Centroid
+    Centroid(i,3:4) = [Siu(1,2)/Siu(3,2) Siu(2,2)/Siu(3,2)];
 
 end
 
@@ -286,7 +314,7 @@ function Siu = FindSiu(RelPos,Seq,MaxNoise)
 % Siu: Message that robot i (root) receives from the subtree sequence
 % specifying the position of robot j in robot´s i local frame.
  
-Siu = [0;0;1];
+Siu = [0 0;0 0;1 1];
 
 for i = 1:length(Seq)-1
     Bvu = RelPos{1,Seq(end-i)}...
@@ -294,14 +322,19 @@ for i = 1:length(Seq)-1
     Ovu = RelPos{1,Seq(end-i+1)}...
         (RelPos{1,Seq(end-i+1)}(:,1) == Seq(end-i),4);
     theta = 180 - Ovu + Bvu;
+    
+    % Clean Message
     M = rotz(theta);
     M(1,3) = RelPos{1,Seq(end-i)}...
-        (RelPos{1,Seq(end-i)}(:,1) == Seq(end-i+1),2)...
-        + MaxNoise*(rand-0.5);
+        (RelPos{1,Seq(end-i)}(:,1) == Seq(end-i+1),2);
     M(2,3) = RelPos{1,Seq(end-i)}...
-        (RelPos{1,Seq(end-i)}(:,1) == Seq(end-i+1),3)...
-        + MaxNoise*(rand-0.5);
-    Siu = M*Siu;
+        (RelPos{1,Seq(end-i)}(:,1) == Seq(end-i+1),3);
+    Siu(:,1) = M*Siu(:,1);
+    
+    % Noisy Message
+    M(1,3) = M(1,3) + MaxNoise*(rand-0.5);
+    M(2,3) = M(2,3) + MaxNoise*(rand-0.5);
+    Siu(:,2) = M*Siu(:,2);
 end
 
 end
