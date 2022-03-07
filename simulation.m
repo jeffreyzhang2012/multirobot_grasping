@@ -15,7 +15,7 @@ play = tic();
 set(gcf,'KeyPressFcn',@keyboardEventListener);
 title('Press q to close');
 running = 1;
-dt = 0.05;
+dt = 0.1;
 while running && toc(play) < 10
     t_loopstart = tic();
 %     m = m.update(toc(play));
