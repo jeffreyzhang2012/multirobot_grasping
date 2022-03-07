@@ -14,10 +14,10 @@ classdef kinematic_controller
         % desired velocities and weights
         vd;
         vd_w;
-        vd_n;
-        vd_wn;
-        vd_t;
-        vd_wt;
+        vd_n;   % normal component
+        vd_wn;  % weight of normal component
+        vd_t;   % tangential component
+        vd_wt;  % weight of tangential component
         wd;
         wd_k;
     end
@@ -43,15 +43,16 @@ classdef kinematic_controller
         end
         
         function obj = compute_desired_vel(obj, model, t)
+        % The functionality of this function should be realized in
+        % dynamics, abandon this when we have nice vd and wd
+            
             % compute desired velocities
             xc = zeros(1, 2);
             xa = zeros(1, 2);
             xc(1) = model.pose(1);
             xc(2) = model.pose(2);
-            %fprintf('model pose = %s\n', mat2str(xc))
             xa(1) = model.x_traj_goal(t);
             xa(2) = model.y_traj_goal(t);
-            %fprintf('model goal = %s\n', mat2str(xa))
 %             Following vn and vt are from the paper but doesn't fit
 %             in our trajectory
             % vn is the normal component (current pos -> goal)
@@ -68,18 +69,20 @@ classdef kinematic_controller
             % theta_d is the angle along the trajectory
             theta_d = 5 * sin(5 * t) + 1;
             theta = model.pose(3);
-%             fprintf('theta = %s\ntheta_d = %s\n',...
-%                 mat2str(theta), mat2str(theta_d))
             obj.wd = obj.wd_k * (theta_d - theta);
         end
         
         %% leader controller
-        function [F, T] = leader(obj)
+        function [F, T] = leader(obj, vd, wd)
         % This function simulates the leader controller outputs.
-            mag = obj.Kf;
-            dir = obj.vd - obj.v;
+            
+%             % old controller
 %             mag = obj.Kf * max(norm(obj.vd) - norm(obj.v), 0);
 %             dir = obj.vd ./ (norm(obj.vd) + obj.EPS);
+
+            % new controller
+            mag = obj.Kf;
+            dir = vd - obj.v;
             mag_comp = obj.mu0 * obj.g / obj.n_robot;
             dir_comp = obj.v ./ (norm(obj.v) + obj.EPS);
             F_vd = mag .* dir;
@@ -88,19 +91,30 @@ classdef kinematic_controller
             fprintf('F_vd = %s\n', mat2str(F_vd))
             F = F_vd + F_comp;
 %             F = F_vd;
-            T = obj.Kt * (obj.wd - obj.w);
+            T = obj.Kt * (wd - obj.w);
 %             fprintf("leader mag = %.2f\nleader dir = [%.2f, %.2f]\n",...
 %                 mag, dir(1), dir(2));
         end
         
         %% follower controller
-        function [F, T] = follower(obj)
+        function [F, T] = follower(obj, acc, F_prev)
         % This function simulates the follower controller outputs.
         % The follower robots cannot generate any torque.
             % TODO: verify follower dynamics
-            mag = obj.mu0 * obj.M * obj.g / obj.n_robot;
-            dir = obj.v ./ (norm(obj.v) + obj.EPS);
-            F = mag .* dir;
+            
+%             % old controller
+%             mag = obj.mu0 * obj.M * obj.g / obj.n_robot;
+%             dir = obj.v ./ (norm(obj.v) + obj.EPS);
+%             F = mag .* dir;
+
+            % new controller
+            % input:
+            %   acc - object acceleration
+            %   F_prev - force applied by robot i at previous timestep,
+            %   this is required because the consensus outputs the update
+            dF = obj.M .* acc + obj.mu0 * obj.M * obj.g .* obj.v ./ (norm(obj.v) + obj.EPS)...
+                + obj.mu1 .* obj.v - obj.n_robot .* F_prev;
+            F = F_prev + dF;
             T = 0;
 %             fprintf("follower mag = %.2f\nfollower dir = [%.2f, %.2f]\n",...
 %                 mag, dir(1), dir(2));

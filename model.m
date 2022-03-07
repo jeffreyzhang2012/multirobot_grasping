@@ -121,7 +121,9 @@ classdef model
             controller = kinematic_controller(obj, t);
             for i = 1 : obj.n_robot
                 if i == 1
-                    [F_out, T_out] = controller.leader();
+                    % vd and wd need to be found from dynamics;
+                    % using poorly computed values here
+                    [F_out, T_out] = controller.leader(controller.vd, controller.wd);
                 else
                     %continue
                     % followers not in correct format yet
