@@ -37,6 +37,8 @@ classdef model
         g; % gravity accel
         velocity; % object velocition (x.dot, y.dot, theta.dot)
         r; % COM to robot
+        
+        acc;    % object acceleration
 
     end
     
@@ -61,7 +63,7 @@ classdef model
     end
     
     methods
-        function obj = model(M, J, mu0, mu1, g, vel, pose)
+        function obj = model(M, J, mu0, mu1, g, vel, pose, acc)
             load('configuration.mat');
             obj.n_robot = n_robot;
             obj.n_side = n_side;
@@ -88,6 +90,10 @@ classdef model
             obj.velocity = vel;
             obj.r = COM_to_robots.'; % shape = n_robot x 2
             obj.pose = pose;
+            % initialize forces
+            obj.F = zeros(obj.n_robot, 2);
+            obj.T = zeros(obj.n_robot, 1);
+            obj.acc = acc;
         end
         
         function obj = update(obj,t)
@@ -113,8 +119,8 @@ classdef model
 
         function obj = dynamic_update(obj, dt, t)
             % TODO: replace obj.F, obj.T with actual controls
-            obj.F = zeros(obj.n_robot, 2);
-            obj.T = zeros(obj.n_robot, 1);
+%             obj.F = zeros(obj.n_robot, 2);
+%             obj.T = zeros(obj.n_robot, 1);
 %             obj.F(:,1) = 10;
 %             obj.F(:,2) = 10;
             fprintf('t = %s\n', mat2str(t))
@@ -125,12 +131,12 @@ classdef model
                     % using poorly computed values here
                     [F_out, T_out] = controller.leader(controller.vd, controller.wd);
                 else
-                    %continue
-                    % followers not in correct format yet
-                    [F_out, T_out] = controller.follower();
+                    % continue
+                    F_prev = obj.F(i, :);
+                    [F_out, T_out] = controller.follower(obj.acc, F_prev, obj.F(1, :));
                 end
-                fprintf('(i = %d)F_out = %s\t', i, mat2str(F_out))
-                fprintf('T_out = %s\n', mat2str(T_out))
+                fprintf('(i = %d)F_out = %s\n', i, mat2str(F_out))
+%                 fprintf('T_out = %s\n', mat2str(T_out))
                 obj.F(i, :) = F_out;
                 obj.T(i) = T_out;
             end
@@ -162,13 +168,14 @@ classdef model
             end
             total_force = sum(obj.F, 1) + Ffriction;
             accel = total_force./obj.M;
+
             fprintf('accel = %s\n', mat2str(accel))
             % Rotational
             Tfriction = - (obj.mu1 * obj.J * obj.velocity(3) / obj.M); % only consider viscous (kinematic)
+            obj.acc = accel;
             % T = sum (T_i + ri x Fi) + Tfriction;
             total_torque = sum(obj.T, 1) + sum (obj.r(:,1).*obj.F(:,2)-obj.r(:,2).*obj.F(:,1)) + Tfriction;
             alpha = total_torque/obj.J;
-            fprintf('alpha = %s\n', mat2str(alpha))
             % update object velocity
             obj.velocity(1:2)  = obj.velocity(1:2) + accel.*dt;
             obj.velocity(3) = obj.velocity(3) + alpha*dt;
