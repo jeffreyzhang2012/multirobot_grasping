@@ -21,7 +21,7 @@ for i = 1:n_robot
     robot_locations(:,i) = [robotX,robotY];
     robot_attach(:,i) = [attachX,attachY];
     line([robotX, attachX],[robotY,attachY]);
-    COM_to_robots(:,i) = [robotX - COM_with_error(1), robotY - COM_with_error(2)];
+    COM_to_robots(:,i) = [attachX - COM_with_error(1), attachY - COM_with_error(2)];
 end
 title("DONE");
 save('configuration.mat','robot_locations','robot_attach','object','n_side','n_robot','COM_with_error','COM_to_robots')

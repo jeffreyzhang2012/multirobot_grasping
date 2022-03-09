@@ -104,6 +104,7 @@ classdef model
             obj.robot_locations = model.transform(obj.H,obj.robot_locations_temp);
             obj.robot_attach = model.transform(obj.H,obj.robot_attach_temp);
             obj.COM = model.transform(obj.H,obj.COM_temp);
+            obj.r = (obj.robot_attach - obj.COM).';
             obj.COM_with_error = model.transform(obj.H,obj.COM_with_error_temp);
             obj.arrow = model.transform_vector(obj.H,eye(2)*10);
             obj.hist = [obj.hist, obj.pose'];
@@ -127,6 +128,7 @@ classdef model
             obj.robot_locations = model.transform(obj.H,obj.robot_locations_temp);
             obj.robot_attach = model.transform(obj.H,obj.robot_attach_temp);
             obj.COM = model.transform(obj.H,obj.COM_temp);
+            obj.r = (obj.robot_attach - obj.COM).';
             obj.COM_with_error = model.transform(obj.H,obj.COM_with_error_temp);
             obj.arrow = model.transform_vector(obj.H,eye(2)*10);
             obj.hist = [obj.hist, obj.pose'];
