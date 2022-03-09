@@ -86,10 +86,10 @@ classdef model
             obj.H = eye(3);
             period = 5;
             obj.x_traj = @(t)3*t;
-            obj.y_traj = @(t)3*sin(period*t)+3*t;
+            obj.y_traj = @(t)3*t;
             obj.th_traj = @(t)t/5;
-            obj.x_traj_goal = @(t)4*t;
-            obj.y_traj_goal = @(t)3*sin(period*t)+3*t;
+            obj.x_traj_goal = @(t)3*t;
+            obj.y_traj_goal = @(t)3*t;
             obj.th_traj_goal = @(t)t/5;
             obj.hist = [0;0;0];
             obj.hist_goal = [0;0;0];
@@ -104,7 +104,7 @@ classdef model
             obj.controller = habibi_controller(n_robot, robot_locations, robot_mass, infrared_range, pose);
 
             obj.vd_weight = 1;
-            obj.omega_d_weight = 1;
+            obj.omega_d_weight = 0.1;
         end
 
         function obj = getGoalFromTrajectory(obj, t)
@@ -115,11 +115,11 @@ classdef model
             
             obj.v_d(2) = pos_d(2)* obj.vd_weight;
             
-            theta_d = atan((obj.x_traj_goal(t+0.01) - obj.x_traj_goal(t - 0.01))/(obj.y_traj_goal(t+0.01) - obj.y_traj_goal(t - 0.01)));
+%             theta_d = atan((obj.x_traj_goal(t+0.01) - obj.x_traj_goal(t - 0.01))/(obj.y_traj_goal(t+0.01) - obj.y_traj_goal(t - 0.01)));
+            theta_d = t/5;
             theta = obj.pose(3);
             obj.omega_d = obj.omega_d_weight * (theta_d - theta);
 
-            %%%% TODO: update GuidePos according traj.
             obj.GuidePos = rotz(rad2deg(obj.pose(3))) * [pos_d, 1].';
             
         end
@@ -167,6 +167,10 @@ classdef model
             obj.arrow = model.transform_vector(obj.H,eye(2)*10);
             obj.hist = [obj.hist, obj.pose'];
             obj.hist_goal = [obj.hist_goal, obj.pose_goal'];
+        end
+
+        function obj = habibi_update(obj, dt)
+            
         end
 
         function obj = payload_dynamics(obj, dt)
