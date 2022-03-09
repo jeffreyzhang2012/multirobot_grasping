@@ -94,7 +94,7 @@ classdef kinematic_controller
             
             % TODO: test consensus using fixed leader force
             % all follower forces should converge to this force
-            % F = [5, 5];
+%             F = [5, 5];s
             T = obj.Kt * (wd - obj.w);
 %             fprintf("leader mag = %.2f\nleader dir = [%.2f, %.2f]\n",...
 %                 mag, dir(1), dir(2));
@@ -125,9 +125,9 @@ classdef kinematic_controller
             fprintf('friction %s\n', mat2str(friction_term))
             robot_term = obj.n_robot .* F_prev;
             fprintf('robot %s\n', mat2str(robot_term))
-%             Fdot = acc_term + friction_term - robot_term;
+            Fdot = acc_term + friction_term - robot_term;
             % idea consensus
-            Fdot = F_leader - F_prev;
+            % Fdot = F_leader - F_prev;
             F = F_prev + Fdot; % * .1;
             T = 0;
 %             fprintf("follower mag = %.2f\nfollower dir = [%.2f, %.2f]\n",...

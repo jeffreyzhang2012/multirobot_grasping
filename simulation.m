@@ -5,7 +5,7 @@ J = 5;
 mu0 = 0.2;
 mu1 = 0.01;
 g = 9.8;
-initial_vel = [0 0 0];
+initial_vel = [0.01 0.01 0];
 initial_pos = [0 0 0];
 initial_acc = [0 0];
 % TODO: add a max veclocity for object
