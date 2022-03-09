@@ -40,15 +40,7 @@ classdef habibi_controller
             C = CentroidEstimation(obj.RelPos,obj.Tree,obj.MaxNoise);
             DirTrans = FindDirTrans(obj.InitConf,obj.Heading,C,GuidePos,obj.MaxNoise);
             V = FindVelocity(DirTrans,omega,Vdes,C);
-            [RelPos,Heading,Heading_past,V] = Update(RelPos,Heading,V,15);
-            
-            %%%%%% Robot frame to object frame
-            for i = 1:size(V,1)
-                v_local = [V(i,1:2)'; 1];
-                v_object = rotz(-Heading_past(i))*v_local; 
-                V(i,:) = v_object(1:2);
-            end
-            %%%%%%%%%%
+            [RelPos,Heading,V] = Update(RelPos,Heading,V,15);
             
             obj.robotVelocities
             F = getAppliedForce(V(:,1:2), obj.robotVelocities, obj.robotMass, dt); % TODO: noise free velocity?
@@ -123,7 +115,7 @@ end
 
 %%
 
-function [RelPos,Heading,Heading_past,V] = Update(RelPos,Heading,V,MaxDeltaH)
+function [RelPos,Heading,V] = Update(RelPos,Heading,V,MaxDeltaH)
 
 % Input:
 % RelPos: Cell Array for each robot containing the position vector Ruv from
@@ -176,6 +168,12 @@ function [RelPos,Heading,Heading_past,V] = Update(RelPos,Heading,V,MaxDeltaH)
     
     % Noisy Velocity Command
     V = V(:,3:4);
+    
+    for i = 1:size(V,1)
+        v_local = [V(i,1:2)'; 1];
+        v_object = rotz(-Heading_past(i))*v_local; 
+        V(i,:) = v_object(1:2);
+    end
 
 end
 
