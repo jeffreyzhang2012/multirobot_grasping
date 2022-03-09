@@ -56,7 +56,7 @@ classdef habibi_controller
             %%%%%% Object frame to global frame
             for i = 1:size(F,1)
                 f_object = [F(i,:)'; 1];
-                f_global = rotz(-deg2rad(pose(3)))*f_object; 
+                f_global = rotz(-rad2deg(pose(3)))*f_object; 
                 F(i,:) = f_global(1:2);
             end
             %%%%%%%%%%
