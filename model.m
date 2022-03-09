@@ -85,12 +85,12 @@ classdef model
             obj.COM_with_error_temp = COM_with_error;
             obj.H = eye(3);
             period = 5;
-            obj.x_traj = @(t)3*t;
-            obj.y_traj = @(t)3*sin(period*t)+3*t;
-            obj.th_traj = @(t)t/5;
-            obj.x_traj_goal = @(t)4*t;
-            obj.y_traj_goal = @(t)3*sin(period*t)+3*t;
-            obj.th_traj_goal = @(t)t/5;
+            obj.x_traj = @(t) 2*t; %%%%3*t;
+            obj.y_traj = @(t) 0; %%%%3*sin(period*t)+3*t;
+            obj.th_traj = @(t)0; %%%% t/5; 
+            obj.x_traj_goal = @(t) 2*t; %%%%4*t;
+            obj.y_traj_goal = @(t) 0; %%%%3*sin(period*t)+3*t;
+            obj.th_traj_goal = @(t)0; %%%%t/5;
             obj.hist = [0;0;0];
             obj.hist_goal = [0;0;0];
             obj.M = M;
@@ -120,7 +120,8 @@ classdef model
             obj.omega_d = obj.omega_d_weight * (theta_d - theta);
 
             %%%% TODO: update GuidePos according traj.
-            obj.GuidePos = rotz(rad2deg(obj.pose(3))) * [pos_d, 1].';
+            obj.GuidePos = rotz(-rad2deg(obj.pose(3))) * [pos_d, 1].';
+            obj.GuidePos = obj.GuidePos(1:2); 
             
         end
         
@@ -166,6 +167,7 @@ classdef model
             obj.COM_with_error = model.transform(obj.H,obj.COM_with_error_temp);
             obj.arrow = model.transform_vector(obj.H,eye(2)*10);
             obj.hist = [obj.hist, obj.pose'];
+            obj.r = (obj.robot_locations - obj.COM).';
             obj.hist_goal = [obj.hist_goal, obj.pose_goal'];
         end
 
@@ -175,14 +177,15 @@ classdef model
                 Ffriction = [0 0];
             else
                 Ffriction = - (obj.mu0 * obj.M * obj.g) .* (obj.velocity(1:2)./norm(obj.velocity(1:2))) ...
-                           - obj.mu0 .* obj.velocity(1:2);
+                           - obj.mu1 .* obj.velocity(1:2);
             end
             total_force = sum(obj.F, 1) + Ffriction;
             accel = total_force./obj.M;
             % Rotational
-            Tfriction = - (obj.mu0 * obj.J * obj.velocity(3) / obj.M); % only consider viscous (kinematic)
-            % T = sum (T_i + ri x Fi) + Tfriction;
-            total_torque = sum(obj.T, 1) + sum (obj.r(:,1).*obj.F(:,2)-obj.r(:,1).*obj.F(:,1)) + Tfriction;
+%             Tfriction = 0;
+            Tfriction = - (obj.mu1 * obj.J * obj.velocity(3) / obj.M); % only consider viscous (kinematic)
+%             T = sum (T_i + ri x Fi) + Tfriction;
+            total_torque = sum(obj.T, 1) + sum ((obj.r(:,1)).*obj.F(:,2)-(obj.r(:,2)).*obj.F(:,1)) + Tfriction;
             alpha = total_torque/obj.J;
             % update object velocity
             obj.velocity(1:2)  = obj.velocity(1:2) + accel.*dt;
@@ -202,7 +205,7 @@ classdef model
             hold on;
             scatter(obj.robot_locations(1,:),obj.robot_locations(2,:),'MarkerEdgeColor',[0 .5 .5],'MarkerFaceColor',[0 .7 .7],'LineWidth',1.5,'DisplayName','Robots');
             scatter(obj.COM(1),obj.COM(2),'DisplayName','com');
-            scatter(obj.COM_with_error(1),obj.COM_with_error(2),'DisplayName','Erroneous com');
+%             scatter(obj.COM_with_error(1),obj.COM_with_error(2),'DisplayName','Erroneous com');
             quiver(obj.COM(1),obj.COM(2),obj.arrow(1,1),obj.arrow(2,1),0, 'MaxHeadSize',0.5,'HandleVisibility','off')
             quiver(obj.COM(1),obj.COM(2),obj.arrow(1,2),obj.arrow(2,2),0, 'MaxHeadSize',0.5,'HandleVisibility','off')
             plot(obj.hist(1,:),obj.hist(2,:),'Color','k','LineStyle','--','DisplayName','Object Trajectory');

@@ -23,7 +23,7 @@ classdef habibi_controller
             % Infrared sensor range
             obj.d = infraredRange;
             % Maximum noise of the infrared sensors
-            obj.MaxNoise = 0.5;
+            obj.MaxNoise = 0.0;
             
             % Finding Initial Relative Positions and Orientations among agents.
             
@@ -48,16 +48,17 @@ classdef habibi_controller
             %[GuidePos,Vdes,omega] =%OBJECTFUNCTION%
             C = CentroidEstimation(obj.RelPos,obj.Tree,obj.MaxNoise);
             DirTrans = FindDirTrans(obj.InitConf,obj.Heading,C,GuidePos,obj.MaxNoise);
+            Vdes = 5*Vdes/norm(Vdes);
             V = FindVelocity(DirTrans,omega,Vdes,C);
             V = V(:,3:4);
             %[obj.RelPos,obj.Heading,V] = Update(obj.RelPos, obj.Heading,V,15);
             
-            F = getAppliedForce(V(:,1:2), obj.robotVelocities, obj.robotMass, dt); % TODO: noise free velocity?
+            F = getAppliedForce(V, obj.robotVelocities, obj.robotMass, dt); % TODO: noise free velocity?
             
             %%%%%% Object frame to global frame
             for i = 1:size(F,1)
                 f_object = [F(i,:)'; 1];
-                f_global = rotz(-rad2deg(obj.pose(3)))*f_object; 
+                f_global = rotz(rad2deg(obj.pose(3)))*f_object; 
                 F(i,:) = f_global(1:2);
             end
             %%%%%%%%%%
@@ -65,6 +66,7 @@ classdef habibi_controller
             %TODO: need to transfer F back to global frame
             obj.robotVelocities = V(:,1:2);
         end
+   
     end
 end
 

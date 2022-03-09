@@ -2,12 +2,12 @@ close all; clear all; clc;
 % Object property
 M = 10;
 J = 5;
-mu0 = 0.2;
-mu1 = 0.01;
+mu0 = 0.0; %Static
+mu1 = 0.0; %Viscous
 g = 9.8;
 initial_vel = [0 0 0];
-initial_pos = [0 0 0];
-robot_mass = 0.5;
+initial_pos = [0 0 0]; 
+robot_mass = 0.4;
 infrared_range = 100;
 % TODO: add a max veclocity for object
 m = model(M,J, mu0, mu1, g, initial_vel, initial_pos, robot_mass,infrared_range);
