@@ -37,9 +37,17 @@ classdef model
         g; % gravity accel
         velocity; % object velocition (x.dot, y.dot, theta.dot)
         r; % COM to robot
+
+        % desired velocity
+        v_d;
+        vd_weight;
+        omega_d;
+        omega_d_weight;
+
         
         % habibi controller related
         controller;
+        GuidePos;
 
     end
     
@@ -61,14 +69,7 @@ classdef model
             transformed = H * x;
             transformed = transformed(1:2,:);
         end
-        function [GuidePos, Vdes, omega] = getGoalFromTrajectory() 
-            % TODO: get guide pos, vdes, omega from the trajectory
 
-            GuidePos = [5,0];   % Varies with time
-            Vdes = 1;           % Varies with time
-            omega = 0.01;       % Varies with time
-            
-        end
     end
     
     methods
@@ -78,6 +79,7 @@ classdef model
             obj.n_side = n_side;
             obj.object_temp = object;
             obj.robot_attach_temp = robot_attach;
+            obj.robot_locations= robot_locations;
             obj.robot_locations_temp = robot_locations;
             obj.COM_temp = [0;0];
             obj.COM_with_error_temp = COM_with_error;
@@ -99,7 +101,25 @@ classdef model
             obj.velocity = vel;
             obj.r = COM_to_robots.'; % shape = n_robot x 2
             obj.pose = pose;
-            obj.controller = habibi_controller(n_robot, robot_locations, robot_mass, infrared_range);
+            obj.controller = habibi_controller(n_robot, robot_locations, robot_mass, infrared_range, pose);
+
+            obj.vd_weight = 1;
+            obj.omega_d_weight = 1;
+        end
+
+        function obj = getGoalFromTrajectory(obj, t)
+            obj.v_d = zeros(1,2);
+            obj.v_d(1) = (obj.x_traj_goal(t) - obj.pose(1))* obj.vd_weight;
+            
+            obj.v_d(2) = (obj.y_traj_goal(t) - obj.pose(2))* obj.vd_weight;
+            
+            theta_d = atan((obj.x_traj_goal(t+0.01) - obj.x_traj_goal(t - 0.01))/(obj.y_traj_goal(t+0.01) - obj.y_traj_goal(t - 0.01)));
+            theta = obj.pose(3);
+            obj.omega_d = obj.omega_d_weight * (theta_d - theta);
+
+            %%%% TODO: update GuidePos according traj.
+            obj.GuidePos = [5,0];   % Varies with time
+            
         end
         
         function obj = update(obj,t)
@@ -126,8 +146,9 @@ classdef model
             %             GuidePos = [5,0];   % Varies with time
             %             Vdes = 1;           % Varies with time
             %             omega = 0.01;       % Varies with time
-            [GuidePos, Vdes, omega] = model.getGoalFromTrajectory();
-            [obj.controller, obj.F] = obj.controller.getControlOutput(GuidePos, Vdes, omega, dt);
+            obj = obj.getGoalFromTrajectory(t);
+            obj.controller = obj.controller.updateState(obj.robot_locations, obj.pose);
+            [obj.controller, obj.F] = obj.controller.getControlOutput(obj.GuidePos, obj.v_d, obj.omega_d, dt);
             obj.T = zeros(obj.n_robot,1);
             % update vel and pose
             obj = obj.payload_dynamics(dt);

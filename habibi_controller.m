@@ -3,6 +3,7 @@ classdef habibi_controller
         n_robot;
         InitConf;
         Heading;
+        Heading_past;
         d; % infrared sensor range
         MaxNoise;
         Tree;
@@ -10,11 +11,12 @@ classdef habibi_controller
         RelPos;
         robotVelocities;
         robotMass;
+        pose;
     end
 
     methods
         %% initialize
-        function obj = habibi_controller(n_robot, robot_locations, robotMass, infraredRange)
+        function obj = habibi_controller(n_robot, robot_locations, robotMass, infraredRange, pose)
             obj.n_robot = n_robot;
             obj.InitConf = [1:n_robot; robot_locations].';%TODO
             obj.Heading = zeros(size(obj.InitConf,1),1); % should we initialize to 0?
@@ -29,6 +31,13 @@ classdef habibi_controller
             obj.RelPos = RelativePosition(obj.InitConf, obj.Graph, n_robot);
             obj.robotVelocities = zeros(n_robot, 2); % initial robot speed to be [0, 0]
             obj.robotMass = robotMass;
+            obj.pose = pose;
+        end
+
+        function obj = updateState(obj, robot_locations, pose)
+            obj.pose = pose;
+            obj.InitConf = [1:obj.n_robot; robot_locations].';%TODO
+            obj.RelPos = RelativePosition(obj.InitConf, obj.Graph, obj.n_robot);
         end
 
         function [obj, F] = getControlOutput(obj, GuidePos, Vdes, omega, dt)
@@ -40,15 +49,14 @@ classdef habibi_controller
             C = CentroidEstimation(obj.RelPos,obj.Tree,obj.MaxNoise);
             DirTrans = FindDirTrans(obj.InitConf,obj.Heading,C,GuidePos,obj.MaxNoise);
             V = FindVelocity(DirTrans,omega,Vdes,C);
-            [RelPos,Heading,V] = Update(RelPos,Heading,V,15);
+            [obj.RelPos,obj.Heading,V] = Update(obj.RelPos, obj.Heading,V,15);
             
-            obj.robotVelocities
             F = getAppliedForce(V(:,1:2), obj.robotVelocities, obj.robotMass, dt); % TODO: noise free velocity?
             
             %%%%%% Object frame to global frame
             for i = 1:size(F,1)
                 f_object = [F(i,:)'; 1];
-                f_global = rotz(-rad2deg(pose(3)))*f_object; 
+                f_global = rotz(-rad2deg(obj.pose(3)))*f_object; 
                 F(i,:) = f_global(1:2);
             end
             %%%%%%%%%%
