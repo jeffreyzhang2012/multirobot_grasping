@@ -49,7 +49,8 @@ classdef habibi_controller
             C = CentroidEstimation(obj.RelPos,obj.Tree,obj.MaxNoise);
             DirTrans = FindDirTrans(obj.InitConf,obj.Heading,C,GuidePos,obj.MaxNoise);
             V = FindVelocity(DirTrans,omega,Vdes,C);
-            [obj.RelPos,obj.Heading,V] = Update(obj.RelPos, obj.Heading,V,15);
+            V = V(:,3:4);
+            %[obj.RelPos,obj.Heading,V] = Update(obj.RelPos, obj.Heading,V,15);
             
             F = getAppliedForce(V(:,1:2), obj.robotVelocities, obj.robotMass, dt); % TODO: noise free velocity?
             
