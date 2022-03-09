@@ -109,16 +109,18 @@ classdef model
 
         function obj = getGoalFromTrajectory(obj, t)
             obj.v_d = zeros(1,2);
-            obj.v_d(1) = (obj.x_traj_goal(t) - obj.pose(1))* obj.vd_weight;
+            pos_d = [obj.x_traj_goal(t)-obj.pose(1), obj.y_traj_goal(t) - obj.pose(2)];
+
+            obj.v_d(1) = pos_d(1)* obj.vd_weight;
             
-            obj.v_d(2) = (obj.y_traj_goal(t) - obj.pose(2))* obj.vd_weight;
+            obj.v_d(2) = pos_d(2)* obj.vd_weight;
             
             theta_d = atan((obj.x_traj_goal(t+0.01) - obj.x_traj_goal(t - 0.01))/(obj.y_traj_goal(t+0.01) - obj.y_traj_goal(t - 0.01)));
             theta = obj.pose(3);
             obj.omega_d = obj.omega_d_weight * (theta_d - theta);
 
             %%%% TODO: update GuidePos according traj.
-            obj.GuidePos = [5,0];   % Varies with time
+            obj.GuidePos = rotz(rad2deg(obj.pose(3))) * [pos_d, 1].';
             
         end
         
@@ -148,7 +150,7 @@ classdef model
             %             omega = 0.01;       % Varies with time
             obj = obj.getGoalFromTrajectory(t);
             obj.controller = obj.controller.updateState(obj.robot_locations, obj.pose);
-            [obj.controller, obj.F] = obj.controller.getControlOutput(obj.GuidePos, obj.v_d, obj.omega_d, dt);
+            [obj.controller, obj.F] = obj.controller.getControlOutput(obj.GuidePos, norm(obj.v_d), obj.omega_d, dt);
             obj.T = zeros(obj.n_robot,1);
             % update vel and pose
             obj = obj.payload_dynamics(dt);
