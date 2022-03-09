@@ -139,14 +139,14 @@ classdef model
                 Ffriction = [0 0];
             else
                 Ffriction = - (obj.mu0 * obj.M * obj.g) .* (obj.velocity(1:2)./norm(obj.velocity(1:2))) ...
-                           - obj.mu0 .* obj.velocity(1:2);
+                           - obj.mu1 .* obj.velocity(1:2);
             end
             total_force = sum(obj.F, 1) + Ffriction;
             accel = total_force./obj.M;
             % Rotational
-            Tfriction = - (obj.mu0 * obj.J * obj.velocity(3) / obj.M); % only consider viscous (kinematic)
+            Tfriction = - (obj.mu1 * obj.J * obj.velocity(3) / obj.M); % only consider viscous (kinematic)
             % T = sum (T_i + ri x Fi) + Tfriction;
-            total_torque = sum(obj.T, 1) + sum (obj.r(:,1).*obj.F(:,2)-obj.r(:,1).*obj.F(:,1)) + Tfriction;
+            total_torque = sum(obj.T, 1) + sum (obj.r(:,1).*obj.F(:,2)-obj.r(:,2).*obj.F(:,1)) + Tfriction;
             alpha = total_torque/obj.J;
             % update object velocity
             obj.velocity(1:2)  = obj.velocity(1:2) + accel.*dt;
