@@ -37,6 +37,9 @@ classdef model
         g; % gravity accel
         velocity; % object velocition (x.dot, y.dot, theta.dot)
         r; % COM to robot
+        
+        % habibi controller related
+        controller;
 
     end
     
@@ -58,10 +61,18 @@ classdef model
             transformed = H * x;
             transformed = transformed(1:2,:);
         end
+        function [GuidePos, Vdes, omega] = getGoalFromTrajectory() 
+            % TODO: get guide pos, vdes, omega from the trajectory
+
+            GuidePos = [5,0];   % Varies with time
+            Vdes = 1;           % Varies with time
+            omega = 0.01;       % Varies with time
+            
+        end
     end
     
     methods
-        function obj = model(M, J, mu0, mu1, g, vel, pose)
+        function obj = model(M, J, mu0, mu1, g, vel, pose, robot_mass, infrared_range)
             load('configuration.mat');
             obj.n_robot = n_robot;
             obj.n_side = n_side;
@@ -88,6 +99,7 @@ classdef model
             obj.velocity = vel;
             obj.r = COM_to_robots.'; % shape = n_robot x 2
             obj.pose = pose;
+            obj.controller = habibi_controller(n_robot, robot_locations, robot_mass, infrared_range);
         end
         
         function obj = update(obj,t)
@@ -111,11 +123,12 @@ classdef model
         end
 
         function obj = dynamic_update(obj, dt, t)
-            % TODO: replace obj.F, obj.T with actual controls
-            obj.F = zeros(obj.n_robot, 2);
-            obj.F(:,1) = 10;
-            obj.F(:,2) = 10;
-            obj.T = zeros(obj.n_robot, 1);
+            %             GuidePos = [5,0];   % Varies with time
+            %             Vdes = 1;           % Varies with time
+            %             omega = 0.01;       % Varies with time
+            [GuidePos, Vdes, omega] = model.getGoalFromTrajectory();
+            [obj.controller, obj.F] = obj.controller.getControlOutput(GuidePos, Vdes, omega, dt);
+            obj.T = zeros(obj.n_robot,1);
             % update vel and pose
             obj = obj.payload_dynamics(dt);
             % intended pose

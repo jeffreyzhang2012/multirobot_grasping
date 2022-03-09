@@ -26,10 +26,12 @@ d = 5;
 
 MaxNoise = 0.5;
 
+n_robots = 5;
+
 % Finding Initial Relative Positions and Orientations among agents.
 
 [Tree, Graph] = CreateTree(InitConf,d);
-RelPos = RelativePosition(InitConf,Graph);
+RelPos = RelativePosition(InitConf,Graph,n_robots);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -59,7 +61,7 @@ RelPos = RelativePosition(InitConf,Graph);
 
 %%
 
-function RelPos = RelativePosition(InitConf, Graph)
+function RelPos = RelativePosition(InitConf, Graph, n_robots)
 
 % Input
 % InitConf: Matrix containing in the first column the robot identifier
@@ -78,7 +80,8 @@ function RelPos = RelativePosition(InitConf, Graph)
 
 % Number of empty cells equal to the number of robots
 
-RelPos = {[], [], [], [], []};%, [], [], [], []};
+% RelPos = {[], [], [], [], []};%, [], [], [], []};
+RelPos = cell(1, n_robots);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
