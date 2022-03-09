@@ -1,7 +1,7 @@
 close all; clear all; clc;
 % Object property
 M = 5;
-J = 5;
+J = 20;
 mu0 = 0.2;
 mu1 = 0.01;
 g = 9.8;

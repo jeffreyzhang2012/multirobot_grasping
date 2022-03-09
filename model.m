@@ -77,9 +77,9 @@ classdef model
             obj.x_traj = @(t)3*t;
             obj.y_traj = @(t)3*sin(period*t)+3*t;
             obj.th_traj = @(t)t/5;
-            obj.x_traj_goal = @(t)4*t;
-            obj.y_traj_goal = @(t)3*sin(period*t)+3*t;
-            obj.th_traj_goal = @(t)t/5;
+            obj.x_traj_goal = @(t)8*t; %4*t;
+            obj.y_traj_goal = @(t)0; %3*sin(period*t)+3*t;
+            obj.th_traj_goal = @(t)0; %t/5;
             obj.hist = [0;0;0];
             obj.hist_goal = [0;0;0];
             obj.M = M;
@@ -129,7 +129,7 @@ classdef model
                 if i == 1
                     % vd and wd need to be found from dynamics;
                     % using poorly computed values here
-                    [F_out, T_out] = controller.leader(controller.vd, controller.wd);
+                    [F_out, T_out] = controller.leader([8 0], 0);
                 else
                     % continue
                     F_prev = obj.F(i, :);
@@ -178,6 +178,7 @@ classdef model
             alpha = total_torque/obj.J;
             % update object velocity
             obj.velocity(1:2)  = obj.velocity(1:2) + accel.*dt;
+            fprintf("obj.velocity %s\n", obj.velocity(1:2))
             obj.velocity(3) = obj.velocity(3) + alpha*dt;
             % update object pose
             obj.pose(1:2) = obj.pose(1:2) + obj.velocity(1:2).*dt;

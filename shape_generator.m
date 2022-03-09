@@ -3,7 +3,7 @@ clear all; close all; clc;
 figure;
 axis([-10,10,-10,10]);
 n_side = 5;
-n_robot = 4;
+n_robot = 8;
 title("Input Object Shape");
 [objectX,objectY] = ginput(5);
 plot(polyshape(objectX,objectY));
