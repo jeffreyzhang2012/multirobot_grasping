@@ -40,8 +40,27 @@ classdef habibi_controller
             C = CentroidEstimation(obj.RelPos,obj.Tree,obj.MaxNoise);
             DirTrans = FindDirTrans(obj.InitConf,obj.Heading,C,GuidePos,obj.MaxNoise);
             V = FindVelocity(DirTrans,omega,Vdes,C);
+            [RelPos,Heading,Heading_past,V] = Update(RelPos,Heading,V,15);
+            
+            %%%%%% Robot frame to object frame
+            for i = 1:size(V,1)
+                v_local = [V(i,1:2)'; 1];
+                v_object = rotz(-Heading_past(i))*v_local; 
+                V(i,:) = v_object(1:2);
+            end
+            %%%%%%%%%%
+            
             obj.robotVelocities
             F = getAppliedForce(V(:,1:2), obj.robotVelocities, obj.robotMass, dt); % TODO: noise free velocity?
+            
+            %%%%%% Object frame to global frame
+            for i = 1:size(F,1)
+                f_object = [F(i,:)'; 1];
+                f_global = rotz(-deg2rad(pose(3)))*f_object; 
+                F(i,:) = f_global(1:2);
+            end
+            %%%%%%%%%%
+            
             %TODO: need to transfer F back to global frame
             obj.robotVelocities = V(:,1:2);
         end
@@ -104,7 +123,7 @@ end
 
 %%
 
-function [RelPos,Heading,V] = Update(RelPos,Heading,V,MaxDeltaH)
+function [RelPos,Heading,Heading_past,V] = Update(RelPos,Heading,V,MaxDeltaH)
 
 % Input:
 % RelPos: Cell Array for each robot containing the position vector Ruv from
@@ -124,6 +143,7 @@ function [RelPos,Heading,V] = Update(RelPos,Heading,V,MaxDeltaH)
 % will rotate MaxDeltaH and will not command any velocity.
 
     n = length(RelPos);
+    Heading_past = Heading;
     
     for i = 1:n
         
