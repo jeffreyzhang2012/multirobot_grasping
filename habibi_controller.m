@@ -130,7 +130,7 @@ function [RelPos,Heading,V] = Update(RelPos,Heading,V,MaxDeltaH)
 % Output:
 % RelPos: Adjusted relative position for each robot given an update in its
 % orientation that is limited by MaxDeltaH.
-% V: Velocity command in robot i local frame. If the robot has to rotate
+% V: Velocity command in object frame. If the robot has to rotate
 % more than MaxDeltaH in order to output the desiered velocity, the robot
 % will rotate MaxDeltaH and will not command any velocity.
 
