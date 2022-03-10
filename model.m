@@ -79,8 +79,8 @@ classdef model
             obj.x_traj = @(t)3*t;
             obj.y_traj = @(t)3*sin(period*t)+3*t;
             obj.th_traj = @(t)t/5;
-            obj.x_traj_goal = @(t)3*t; %4*t;
-            obj.y_traj_goal = @(t)0; %3*sin(period*t)+3*t;
+            obj.x_traj_goal = @(t)3*t; %3t(x=15)(metrics); 3t(x=10)(error 1% acc); 2t(x=7)
+            obj.y_traj_goal = @(t)3*t; %0; 3t; 2sin(t/2);
             obj.th_traj_goal = @(t)0; %t/5;
             obj.hist = [0;0;0];
             obj.hist_goal = [0;0;0];
@@ -114,7 +114,7 @@ classdef model
             obj.COM = model.transform(obj.H,obj.COM_temp);
             obj.r = (obj.robot_attach - obj.COM).';
             obj.COM_with_error = model.transform(obj.H,obj.COM_with_error_temp);
-            obj.arrow = model.transform_vector(obj.H,eye(2)*10);
+            obj.arrow = model.transform_vector(obj.H,eye(2));
             obj.hist = [obj.hist, obj.pose'];
             obj.hist_goal = [obj.hist_goal, obj.pose_goal'];
         end
@@ -138,7 +138,9 @@ classdef model
                     [F_out, T_out] = controller.follower(obj.acc, F_prev, obj.F(1, :));
                 end
                 fprintf('(i = %d)F_out = %s\n', i, mat2str(F_out))
-%                 fprintf('T_out = %s\n', mat2str(T_out))
+                if i == 1
+                    fprintf('T_out = %s\n', mat2str(T_out))
+                end
                 if norm(F_out) > 3
                     F_out = F_out ./ norm(F_out) .* 3;
                 end
@@ -159,7 +161,8 @@ classdef model
             obj.COM = model.transform(obj.H,obj.COM_temp);
             obj.r = (obj.robot_attach - obj.COM).';
             obj.COM_with_error = model.transform(obj.H,obj.COM_with_error_temp);
-            obj.arrow = model.transform_vector(obj.H,eye(2)*10);
+%             obj.arrow = model.transform_vector(obj.H,eye(2)*10);
+            obj.arrow = model.transform_vector(obj.H,eye(2));
             obj.hist = [obj.hist, obj.pose'];
             obj.hist_goal = [obj.hist_goal, obj.pose_goal'];
         end
@@ -202,7 +205,7 @@ classdef model
             hold on;
             scatter(obj.robot_locations(1,:),obj.robot_locations(2,:),'MarkerEdgeColor',[0 .5 .5],'MarkerFaceColor',[0 .7 .7],'LineWidth',1.5,'DisplayName','Robots');
             scatter(obj.COM(1),obj.COM(2),'DisplayName','com');
-            scatter(obj.COM_with_error(1),obj.COM_with_error(2),'DisplayName','Erroneous com');
+%             scatter(obj.COM_with_error(1),obj.COM_with_error(2),'DisplayName','Erroneous com');
             quiver(obj.COM(1),obj.COM(2),obj.arrow(1,1),obj.arrow(2,1),0, 'MaxHeadSize',0.5,'HandleVisibility','off')
             quiver(obj.COM(1),obj.COM(2),obj.arrow(1,2),obj.arrow(2,2),0, 'MaxHeadSize',0.5,'HandleVisibility','off')
             plot(obj.hist(1,:),obj.hist(2,:),'Color','k','LineStyle','--','DisplayName','Object Trajectory');
@@ -222,13 +225,8 @@ classdef model
                 end
                 hold on
             end
-            subplot(2, 1, 1)
-            title('Force consensus')
-            xlabel('t')
-            ylabel('Fx')
-            subplot(2, 1, 2)
-            xlabel('t')
-            ylabel('Fy')
+%             subplot(2, 1, 1)
+%             title('Force consensus')
             hold off
             %% Velocity
             figure(3)
@@ -238,13 +236,8 @@ classdef model
                 plot(t, obj.velocity(dim), 'k.')
                 hold on
             end
-            subplot(2, 1, 1)
-            title('Object velocity')
-            xlabel('t')
-            ylabel('vx')
-            subplot(2, 1, 2)
-            xlabel('t')
-            ylabel('vy')
+%             subplot(2, 1, 1)
+%             title('Object velocity')
             hold off
         end
         

@@ -17,11 +17,37 @@ m = model(M,J, mu0, mu1, g, initial_vel, initial_pos, initial_acc);
 dt = 0.1;
 for t = 0 : dt : 10
     m = m.dynamic_update(dt, t);
+    if m.pose(1) > 10
+        break
+    end
     m.draw(t);
 end
 figure(1)
-axis([-15,50,-15,50]);
+% axis([0,18,-3,3]);
+% axis equal
 legend
-title("Robot Trajectory");
+title("Robot Trajectory")
+saveas(gcf, 'plots/slope_err1_traj.png')
+
+figure(2)
+subplot(2, 1, 1)
+title("Robot Force")
+xlabel('t')
+ylabel('Fx')
+subplot(2, 1, 2)
+xlabel('t')
+ylabel('Fy')
+saveas(gcf, 'plots/slope_err1_force.png')
+
+figure(3)
+subplot(2, 1, 1)
+title("Object Velocity")
+xlabel('t')
+ylabel('vx')
+subplot(2, 1, 2)
+xlabel('t')
+ylabel('vy')
+saveas(gcf, 'plots/slope_err1_vel.png')
+
 %% helper functions
 
