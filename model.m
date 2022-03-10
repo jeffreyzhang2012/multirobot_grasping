@@ -74,7 +74,7 @@ classdef model
     
     methods
         function obj = model(M, J, mu0, mu1, g, vel, pose, robot_mass, infrared_range)
-            load('configuration.mat');
+            load('fake_configuration.mat');
             obj.n_robot = n_robot;
             obj.n_side = n_side;
             obj.object_temp = object;
@@ -85,12 +85,13 @@ classdef model
             obj.COM_with_error_temp = COM_with_error;
             obj.H = eye(3);
             period = 5;
-            obj.x_traj = @(t) 2*t; %%%%3*t;
-            obj.y_traj = @(t) 0; %%%%3*sin(period*t)+3*t;
-            obj.th_traj = @(t)0; %%%% t/5; 
-            obj.x_traj_goal = @(t) 2*t; %%%%4*t;
-            obj.y_traj_goal = @(t) 0; %%%%3*sin(period*t)+3*t;
-            obj.th_traj_goal = @(t)0; %%%%t/5;
+            obj.x_traj = @(t)3*t;
+            obj.y_traj = @(t)0;
+            obj.th_traj = @(t)0;
+            
+            obj.x_traj_goal = @(t)t;
+            obj.y_traj_goal = @(t)0.5*sin(t);
+            obj.th_traj_goal = @(t)0;
             obj.hist = [0;0;0];
             obj.hist_goal = [0;0;0];
             obj.M = M;
@@ -115,9 +116,12 @@ classdef model
             
             obj.v_d(2) = pos_d(2)* obj.vd_weight;
             
-            theta_d = atan((obj.x_traj_goal(t+0.01) - obj.x_traj_goal(t - 0.01))/(obj.y_traj_goal(t+0.01) - obj.y_traj_goal(t - 0.01)));
+            dt = 0.05;
+            theta_d = atan2(obj.y_traj_goal(t+dt)-obj.pose(2),obj.x_traj_goal(t+dt)-obj.pose(1));
+%             theta_d = 0;
             theta = obj.pose(3);
-            obj.omega_d = obj.omega_d_weight * (theta_d - theta);
+            
+            obj.omega_d = -(theta_d-theta)/dt;
 
             %%%% TODO: update GuidePos according traj.
             obj.GuidePos = rotz(-rad2deg(obj.pose(3))) * [pos_d, 1].';
@@ -169,6 +173,10 @@ classdef model
             obj.hist = [obj.hist, obj.pose'];
             obj.r = (obj.robot_locations - obj.COM).';
             obj.hist_goal = [obj.hist_goal, obj.pose_goal'];
+        end
+
+        function obj = habibi_update(obj, dt)
+            
         end
 
         function obj = payload_dynamics(obj, dt)

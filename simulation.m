@@ -1,15 +1,28 @@
 close all; clear all; clc;
 % Object property
-M = 10;
-J = 5;
+M = 2;
+J = 0.3;
+%%%%%%
 mu0 = 0.0; %Static
-mu1 = 0.0; %Viscous
+mu1 = 0.1; %Viscous
+%%%%
 g = 9.8;
 initial_vel = [0 0 0];
 initial_pos = [0 0 0]; 
-robot_mass = 0.4;
+robot_mass = 0.6;
 infrared_range = 100;
 % TODO: add a max veclocity for object
+
+% m = model(M,J, mu0, mu1, g, initial_vel, initial_pos, robot_mass,infrared_range);
+% dt = 0.1;
+% for t = 0 : dt : 10
+%     m = m.dynamic_update(dt, t);
+%     m.draw();
+%     axis([-15,50,-15,50]);
+% end
+% legend
+% title("Robot Trajectory");
+
 m = model(M,J, mu0, mu1, g, initial_vel, initial_pos, robot_mass,infrared_range);
 global running;
 fig = figure;
@@ -18,6 +31,8 @@ set(gcf,'KeyPressFcn',@keyboardEventListener);
 title('Press q to close');
 running = 1;
 dt = 0.05;
+
+
 while running && toc(play) < 10
     t_loopstart = tic();
 %     m = m.update(toc(play));
