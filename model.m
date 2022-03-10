@@ -212,16 +212,15 @@ classdef model
             figure(2)
             hold on
             for dim = 1 : 2
+                subplot(2, 1, dim)
                 for i = 1 : obj.n_robot
-                    subplot(2, 1, dim)
                     if i == 1
                         plot(t, obj.F(i, dim), 'r.')
-                        hold on
                     else
                         plot(t, obj.F(i, dim), 'b.')
-                        hold on
                     end
                 end
+                hold on
             end
             subplot(2, 1, 1)
             title('Force consensus')
@@ -232,27 +231,20 @@ classdef model
             ylabel('Fy')
             hold off
             %% Velocity
-            figure(2)
+            figure(3)
             hold on
             for dim = 1 : 2
-                for i = 1 : obj.n_robot
-                    subplot(2, 1, dim)
-                    if i == 1
-                        plot(t, obj.velocity(i, dim), 'r.')
-                        hold on
-                    else
-                        plot(t, obj.F(i, dim), 'b.')
-                        hold on
-                    end
-                end
+                subplot(2, 1, dim)
+                plot(t, obj.velocity(dim), 'k.')
+                hold on
             end
             subplot(2, 1, 1)
-            title('Force consensus')
+            title('Object velocity')
             xlabel('t')
-            ylabel('Fx')
+            ylabel('vx')
             subplot(2, 1, 2)
             xlabel('t')
-            ylabel('Fy')
+            ylabel('vy')
             hold off
         end
         
