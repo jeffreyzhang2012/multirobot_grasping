@@ -17,9 +17,10 @@ m = model(M,J, mu0, mu1, g, initial_vel, initial_pos, initial_acc);
 dt = 0.1;
 for t = 0 : dt : 10
     m = m.dynamic_update(dt, t);
-    m.draw();
-    axis([-15,50,-15,50]);
+    m.draw(t);
 end
+figure(1)
+axis([-15,50,-15,50]);
 legend
 title("Robot Trajectory");
 %% helper functions

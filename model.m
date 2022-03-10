@@ -80,7 +80,7 @@ classdef model
             obj.y_traj = @(t)3*sin(period*t)+3*t;
             obj.th_traj = @(t)t/5;
             obj.x_traj_goal = @(t)3*t; %4*t;
-            obj.y_traj_goal = @(t)0;%3*sin(period*t)+3*t;
+            obj.y_traj_goal = @(t)0; %3*sin(period*t)+3*t;
             obj.th_traj_goal = @(t)0; %t/5;
             obj.hist = [0;0;0];
             obj.hist_goal = [0;0;0];
@@ -130,9 +130,10 @@ classdef model
             fprintf('obj.acc %s\n', mat2str(obj.acc))            
             for i = 1 : obj.n_robot
                 if i == 1
-                    [F_out, T_out] = controller.leader([3 0], controller.wd);
-%                     [F_out, T_out] = controller.leader(controller.vd, controller.wd);
+%                     [F_out, T_out] = controller.leader([3, 0], controller.wd);
+                    [F_out, T_out] = controller.leader(controller.vd, controller.wd);
                 else
+                    %continue
                     F_prev = obj.F(i, :);
                     [F_out, T_out] = controller.follower(obj.acc, F_prev, obj.F(1, :));
                 end
@@ -190,7 +191,9 @@ classdef model
             obj.pose(3) = obj.pose(3) + obj.velocity(3)*dt;
         end
                 
-        function draw(obj)
+        function draw(obj, t)
+            %% Trajectory
+            figure(1)
             plot(polyshape(obj.object(1,:),obj.object(2,:)),'DisplayName','Object');
             title("Press q to quit early");
             for i = 1:obj.n_robot
@@ -205,6 +208,52 @@ classdef model
             plot(obj.hist(1,:),obj.hist(2,:),'Color','k','LineStyle','--','DisplayName','Object Trajectory');
             plot(obj.hist_goal(1,:),obj.hist_goal(2,:),'Color','r','LineStyle','--','DisplayName','Goal Trajectory');
             hold off;
+            %% Force
+            figure(2)
+            hold on
+            for dim = 1 : 2
+                for i = 1 : obj.n_robot
+                    subplot(2, 1, dim)
+                    if i == 1
+                        plot(t, obj.F(i, dim), 'r.')
+                        hold on
+                    else
+                        plot(t, obj.F(i, dim), 'b.')
+                        hold on
+                    end
+                end
+            end
+            subplot(2, 1, 1)
+            title('Force consensus')
+            xlabel('t')
+            ylabel('Fx')
+            subplot(2, 1, 2)
+            xlabel('t')
+            ylabel('Fy')
+            hold off
+            %% Velocity
+            figure(2)
+            hold on
+            for dim = 1 : 2
+                for i = 1 : obj.n_robot
+                    subplot(2, 1, dim)
+                    if i == 1
+                        plot(t, obj.velocity(i, dim), 'r.')
+                        hold on
+                    else
+                        plot(t, obj.F(i, dim), 'b.')
+                        hold on
+                    end
+                end
+            end
+            subplot(2, 1, 1)
+            title('Force consensus')
+            xlabel('t')
+            ylabel('Fx')
+            subplot(2, 1, 2)
+            xlabel('t')
+            ylabel('Fy')
+            hold off
         end
         
     end
