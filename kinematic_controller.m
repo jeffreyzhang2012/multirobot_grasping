@@ -31,7 +31,7 @@ classdef kinematic_controller
             obj.mu0 = model.mu0;
             obj.mu1 = model.mu1;
             obj.Kf = 1;     % worked with 3
-            obj.Kt = 0;     % worked with 5
+            obj.Kt = 2;     % worked with 5
             obj.EPS = 1e-9;
             obj.v = model.velocity(1:2);
             obj.w = model.velocity(3);
@@ -66,7 +66,7 @@ classdef kinematic_controller
             obj.vd = obj.vd_w .* (xa - xc);
 
             % theta_d is the desired theta
-            theta_d = 0;
+            theta_d = model.th_traj_goal(t);
             theta = model.pose(3);
             obj.wd = obj.wd_k * (theta_d - theta);
         end
@@ -96,7 +96,7 @@ classdef kinematic_controller
             
             % TODO: test consensus using fixed leader force
             % all follower forces should converge to this force
-%             F = [5, 5];
+%             F = [5, 0];
             T = obj.Kt * (wd - obj.w);
 %             fprintf("leader mag = %.2f\nleader dir = [%.2f, %.2f]\n",...
 %                 mag, dir(1), dir(2));
@@ -121,16 +121,17 @@ classdef kinematic_controller
             %   F_prev - force applied by robot i at previous timestep,
             %   this is required because the consensus outputs the update
             acc_term = obj.M .* acc;
-            fprintf('acc %s\n', mat2str(acc_term))
+            fprintf('acc_term %s\n', mat2str(acc_term))
             friction_term = ...
-                obj.mu0 * obj.M * obj.g .* obj.v ./ (norm(obj.v) + obj.EPS) + obj.mu1 .* obj.v;
-            fprintf('friction %s\n', mat2str(friction_term))
+                obj.mu0 * obj.M * obj.g .* obj.v ./ (norm(obj.v) + obj.EPS)...
+                + obj.mu1 .* obj.v;
+            fprintf('friction_term %s\n', mat2str(friction_term))
             robot_term = obj.n_robot .* F_prev;
             fprintf('robot %s\n', mat2str(robot_term))
-%             Fdot = acc_term + friction_term - robot_term;
+            Fdot = acc_term + friction_term - robot_term;
             % idea consensus
-            Fdot = F_leader - F_prev;
-            F = F_prev + Fdot; % * .1;
+%             Fdot = F_leader - F_prev;
+            F = F_prev + Fdot;% * .1;
             T = 0;
 %             fprintf("follower mag = %.2f\nfollower dir = [%.2f, %.2f]\n",...
 %                 mag, dir(1), dir(2));

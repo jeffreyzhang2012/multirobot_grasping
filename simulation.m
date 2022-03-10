@@ -1,11 +1,11 @@
 close all; clear all; clc;
 % Object property
-M = 5;
-J = 20;
-mu0 = 0.2;
-mu1 = 0.01;
+M = 2;
+J = .3;
+mu0 = 0;%0.2;
+mu1 = 0.1;
 g = 9.8;
-initial_vel = [0.01 0.01 0];
+initial_vel = [0.0001 0 0];
 initial_pos = [0 0 0];
 initial_acc = [0 0];
 % TODO: add a max veclocity for object
@@ -29,7 +29,6 @@ while running && toc(play) < 10
     key = pollKeyboard();
     if(key ~= false); processKey(key); end
 end
-m.draw();
 legend
 title("Robot Trajectory");
 %% helper functions

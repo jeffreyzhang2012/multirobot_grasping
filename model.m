@@ -52,6 +52,8 @@ classdef model
         
         function transformed = transform(H,x)
             x = [x;ones(size(x(1,:)))];
+%             fprintf("H: %s\n", mat2str(H))
+%             fprintf("x: %s\n", mat2str(x))
             transformed = H * x;
             transformed = transformed(1:2,:);
         end
@@ -64,7 +66,7 @@ classdef model
     
     methods
         function obj = model(M, J, mu0, mu1, g, vel, pose, acc)
-            load('configuration.mat');
+            load('fake_configuration.mat');
             obj.n_robot = n_robot;
             obj.n_side = n_side;
             obj.object_temp = object;
@@ -77,8 +79,8 @@ classdef model
             obj.x_traj = @(t)3*t;
             obj.y_traj = @(t)3*sin(period*t)+3*t;
             obj.th_traj = @(t)t/5;
-            obj.x_traj_goal = @(t)8*t; %4*t;
-            obj.y_traj_goal = @(t)0; %3*sin(period*t)+3*t;
+            obj.x_traj_goal = @(t)3*t; %4*t;
+            obj.y_traj_goal = @(t)0;%3*sin(period*t)+3*t;
             obj.th_traj_goal = @(t)0; %t/5;
             obj.hist = [0;0;0];
             obj.hist_goal = [0;0;0];
@@ -125,19 +127,22 @@ classdef model
 %             obj.F(:,2) = 10;
             fprintf('t = %s\n', mat2str(t))
             controller = kinematic_controller(obj, t);
+            fprintf('obj.acc %s\n', mat2str(obj.acc))            
             for i = 1 : obj.n_robot
                 if i == 1
-                    % vd and wd need to be found from dynamics;
-                    % using poorly computed values here
-                    [F_out, T_out] = controller.leader([8 0], 0);
+                    [F_out, T_out] = controller.leader([3 0], controller.wd);
+%                     [F_out, T_out] = controller.leader(controller.vd, controller.wd);
                 else
-                    % continue
                     F_prev = obj.F(i, :);
                     [F_out, T_out] = controller.follower(obj.acc, F_prev, obj.F(1, :));
                 end
                 fprintf('(i = %d)F_out = %s\n', i, mat2str(F_out))
 %                 fprintf('T_out = %s\n', mat2str(T_out))
+                if norm(F_out) > 3
+                    F_out = F_out ./ norm(F_out) .* 3;
+                end
                 obj.F(i, :) = F_out;
+                T_out = min(T_out, 5);
                 obj.T(i) = T_out;
             end
             % update vel and pose
@@ -178,7 +183,7 @@ classdef model
             alpha = total_torque/obj.J;
             % update object velocity
             obj.velocity(1:2)  = obj.velocity(1:2) + accel.*dt;
-            fprintf("obj.velocity %s\n", obj.velocity(1:2))
+            fprintf("obj.velocity %s\n", mat2str(obj.velocity(1:2)))
             obj.velocity(3) = obj.velocity(3) + alpha*dt;
             % update object pose
             obj.pose(1:2) = obj.pose(1:2) + obj.velocity(1:2).*dt;
@@ -202,82 +207,6 @@ classdef model
             hold off;
         end
         
-        %% kinematic controller
-%         %% initialize
-%         function sys = kinematric_controller(obj, t)
-%             sys.n_robot = obj.n_robot;
-%             sys.M = obj.M;
-%             sys.g = obj.g;
-%             sys.mu0 = obj.mu0;
-%             sys.mu1 = obj.mu1;
-%             sys.Kf = 1;
-%             sys.Kt = 1;
-%             sys.EPS = 1e-9;
-%             sys.v = obj.velocity(1:2);
-%             sys.w = obj.velocity(3);
-%             sys.vd_wn = .7;
-%             sys.vd_wt = .3;
-%             sys.wd_k = 1;
-%             % compute desired velocities
-%             xc = zeros(2, 1);
-%             xa = zeros(2, 1);
-%             xc(1) = obj.pose(1);
-%             xc(2) = obj.pose(2);
-%             xa(1) = obj.x_traj_goal(t);
-%             xa(2) = obj.y_traj_goal(t);
-%             vn = (xa - xc) ./ (norm(xa - xc) + sys.EPS);
-%             % TODO: vt should be the tangential component at desired traj
-%             vt = sys.v ./ (norm(sys.v + sys.EPS));
-%             sys.vd = sys.vd_wn .* vn + sys.vd_wt .* vt;
-%             % TODO: theta_d should be the angle along the trajectory
-%             theta_d = obj.pose(3);
-%             sys.wd = sys.wd_k * (theta_d - obj.pose(3));
-%         end
-%         
-%         %% leader controller
-%         function [F, T] = leader(sys)
-%         % This function simulates the leader controller outputs.
-%             % TODO: the velocities should be in local reference frame
-%             
-% %             global Kf, global Kt, global g, global EPS, global ref, global mu_s, global N
-%             % global ref frame
-%             mag = sys.Kf;
-%             dir = sys.vd - sys.v;
-% %             mag = Kp * max(norm(vd) - norm(v), 0);
-% %             dir = vd ./ (norm(vd) + EPS);
-%             mag_comp = sys.mu0 * sys.g / sys.n_robot;
-%             dir_comp = sys.v ./ (norm(sys.v) + sys.EPS);
-%             % local ref frame
-% %             vd1 = vd - v;   % assuming v_object == v_leader
-% %             v1 = v - v;
-% %             mag = Kp * max(norm(vd1) - norm(v1), 0);
-% %             dir = vd1 ./ (norm(vd1) + EPS);
-% %             mag_comp = mu_s * g / N;
-% %             dir_comp = v1 ./ (norm(v1) + EPS);
-%             % common
-%             F = mag .* dir + mag_comp .* dir_comp;
-%             T = sys.Kt * (sys.wd - sys.w);
-%             fprintf("leader mag = %.2f\nleader dir = [%.2f, %.2f]\n",...
-%                 mag, dir(1), dir(2));
-%         end
-%         
-%         %% follower controller
-%         function [F, T] = follower(sys)
-%         % This function simulates the follower controller outputs
-%             % TODO: verify follower dynamics
-%             % TODO: velocity should be in follower local ref frame
-%             
-% %             global mu_s, global M, global g, global N, global EPS, global ref
-%             mag = sys.mu0 * sys.M * sys.g / (sys.n_robot + 1);
-%             % global ref frame
-%             dir = sys.v ./ (norm(sys.v) + sys.EPS);
-%             % local ref frame
-% %             F = 0;
-%             % common
-%             F = mag .* dir;
-%             T = 0;
-%         end
-
     end
 end
 
